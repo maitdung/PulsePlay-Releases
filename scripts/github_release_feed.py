@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import hashlib
+import importlib.util
 import json
 import pathlib
 import plistlib
@@ -12,6 +13,12 @@ import zipfile
 
 
 def prepare(ipa, repo, tag, body, out, icon, published_at=None):
+    spec = importlib.util.spec_from_file_location('privacy', pathlib.Path(__file__).with_name('check_distribution_privacy.py'))
+    privacy = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(privacy)
+    report = privacy.inspect(ipa)
+    if not report['passed']:
+        raise ValueError('IPA privacy gate failed: ' + ', '.join(sorted({item['kind'] for item in report['issues']})))
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9_.-]+", repo):
         raise ValueError("Invalid GitHub owner/repo")
     if not re.fullmatch(r"v[0-9.]+-build[0-9]+", tag):
