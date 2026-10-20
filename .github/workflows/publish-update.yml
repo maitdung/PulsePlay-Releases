@@ -1,0 +1,49 @@
+name: Publish PulsePlay update feed
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag (vVERSION-buildBUILD)
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: pulseplay-release-feed
+  cancel-in-progress: false
+jobs:
+  feed:
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate and attach update metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body,publishedAt,isDraft,isPrerelease > release.json
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.ipa' --dir incoming
+          ICON_ID=$(gh api "repos/$GITHUB_REPOSITORY/releases" --jq '[.[].assets[] | select(.name == "icon.png") | .id][0]')
+          [[ "$ICON_ID" =~ ^[0-9]+$ ]] || { echo 'Upload icon.png once with the first release.'; exit 1; }
+          gh api "repos/$GITHUB_REPOSITORY/releases/assets/$ICON_ID" -H 'Accept: application/octet-stream' > icon.png
+          python3 - <<'PY'
+          import hashlib, importlib.util, json, os, pathlib
+          root = pathlib.Path('.')
+          release = json.loads((root / 'release.json').read_text())
+          assert not release['isDraft'] and not release['isPrerelease'], 'Use a published stable release'
+          files = list((root / 'incoming').glob('*.ipa'))
+          assert files, 'Attach the IPA before publishing'
+          hashes = {hashlib.file_digest(p.open('rb'), 'sha256').hexdigest() for p in files}
+          assert len(hashes) == 1, 'Conflicting IPAs in one release'
+          spec = importlib.util.spec_from_file_location('feed', 'scripts/github_release_feed.py')
+          feed = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(feed)
+          feed.prepare(files[0], os.environ['GITHUB_REPOSITORY'], os.environ['TAG'], release['body'],
+                       root / 'feed', root / 'icon.png', release['publishedAt'])
+          PY
+          gh release upload "$TAG" feed/*.ipa feed/update.json feed/altsource.json feed/icon.png feed/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --latest
