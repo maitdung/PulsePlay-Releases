@@ -1,28 +1,26 @@
 # PulsePlay Releases
 
-Kênh phát hành PulsePlay do maitdung quản lý.
+Repo này phân phối IPA và công cụ cập nhật, **không chứa mã nguồn ứng dụng PulsePlay**. Không tải mã app, chứng chỉ hoặc khóa ký lên đây.
 
-[Tải bản mới nhất](https://github.com/maitdung/PulsePlay-Releases/releases/latest) · [Hướng dẫn phát hành](PUBLISHING.md) · [Kiểm tra quy trình tự động](https://github.com/maitdung/PulsePlay-Releases/actions/workflows/publish-update.yml)
+## Cách đăng bản mới đơn giản nhất
 
-## Đăng một bản mới
+1. Build IPA với số build tăng lên.
+2. [Mở trang tải IPA lên](https://github.com/maitdung/PulsePlay-Releases/upload/main/incoming), kéo IPA vào rồi chọn **Commit changes** lên main.
+3. Đợi [Upload IPA to publish](https://github.com/maitdung/PulsePlay-Releases/actions/workflows/ipa-drop.yml) chạy xanh.
 
-1. Build IPA mới với số build tăng lên. Ví dụ bản 315 dùng tag `v0.12.1-build315`.
-2. Vào Releases → Draft a new release. Điền tag và tên bản cập nhật.
-3. Ghi nội dung với các mục `## Tính năng mới`, `## Sửa lỗi`, `## Cải thiện hiệu năng`, `## Lưu ý`.
-4. Đính kèm IPA rồi nhấn Publish release.
-5. Chờ workflow Publish PulsePlay update feed hiện dấu xanh. App sẽ đọc phiên bản/build, dung lượng và nội dung bản mới từ nguồn cố định.
+Hệ thống tự đọc phiên bản trong IPA, tạo Release và nguồn cập nhật. Không cần đặt tag hay sửa JSON thủ công. IPA trùng build và giống nội dung sẽ được bỏ qua; cùng build nhưng khác nội dung bị từ chối.
 
-Workflow đã chạy thành công cho build 314. Các lần sau không cần tự sửa update.json hay altsource.json. Khi không đổi số phiên bản, vẫn phải tăng số build; không thay IPA khác nội dung cùng build.
+Muốn hiển thị chi tiết: tải cùng IPA một file như `v0.12.1-build315.md`, có các mục `## Tính năng mới`, `## Sửa lỗi`, `## Cải thiện hiệu năng`. Các mục có nội dung gạch đầu dòng. Không có file này thì chỉ hiện thông báo chung, không tự suy đoán sửa lỗi.
 
-## Người dùng app
+## Người dùng
 
-Cài build 314 một lần để có giao diện và địa chỉ kênh cập nhật mới. Các bản trước chưa được gắn địa chỉ này nên không tự biết có bản mới trên GitHub.
+Cần cài build 314 một lần để có kênh cập nhật. Từ đó app kiểm tra khi mở/hoạt động trở lại, có giới hạn tần suất; có thể bấm Kiểm tra bản mới. App hiển thị phiên bản, chi tiết và tải IPA có kiểm tra SHA-256. Cài đặt vẫn qua bộ ký/cài tương thích trên iPhone, không phải tự cài âm thầm trong PulsePlay.
 
-App kiểm tra khi mở/hoạt động trở lại, có giới hạn tần suất; người dùng có thể bấm Kiểm tra bản mới. Nút Cập nhật tải IPA trong PulsePlay, hiển thị tiến trình, kiểm tra SHA-256 rồi mở bảng chia sẻ để chuyển sang bộ ký/cài. Có thêm đường cài trực tiếp bằng SideStore. Phần cài đặt vẫn cần bộ ký/cài tương thích; đây chưa phải tự cài hoàn toàn trong PulsePlay.
+[Tải bản mới nhất](https://github.com/maitdung/PulsePlay-Releases/releases/latest)
 
-## Địa chỉ cố định
-
-- Nguồn PulsePlay: https://github.com/maitdung/PulsePlay-Releases/releases/latest/download/update.json
+- Nguồn app: https://github.com/maitdung/PulsePlay-Releases/releases/latest/download/update.json
 - Nguồn SideStore: https://github.com/maitdung/PulsePlay-Releases/releases/latest/download/altsource.json
 
-Không đưa tài khoản Apple, chứng chỉ ký hoặc log cá nhân lên repo.
+## Cách thủ công dự phòng
+
+Tạo Release với tag khớp IPA, ví dụ `v0.12.1-build315`, đính kèm IPA, ghi thay đổi rồi Publish release. Workflow Publish PulsePlay update feed tạo metadata. Nếu workflow lỗi, xử lý lỗi và kiểm tra Actions xanh trước khi thông báo phát hành.
