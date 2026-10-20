@@ -104,6 +104,12 @@ def publish(folder, repo, client, dry_run=False):
     notes_file = folder / (tag + ".md")
     body = notes_file.read_text() if notes_file.exists() else (
         f"PulsePlay {version} · Build {build}\n\nBản cập nhật mới. Bản phát hành này chưa có ghi chú thay đổi chi tiết.")
+    spec = importlib.util.spec_from_file_location('privacy', pathlib.Path(__file__).with_name('check_distribution_privacy.py'))
+    privacy = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(privacy)
+    report = privacy.inspect(ipa)
+    if not report['passed']:
+        raise ValueError('IPA privacy gate failed: ' + ', '.join(sorted({item['kind'] for item in report['issues']})))
     if dry_run:
         return {"status": "ready", "tag": tag, "ipa": ipa.name, "notes": notes_file.name if notes_file.exists() else None}
     spec = importlib.util.spec_from_file_location("feed", pathlib.Path(__file__).with_name("github_release_feed.py"))
