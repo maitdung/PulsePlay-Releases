@@ -1,0 +1,20 @@
+name: Upload IPA to publish
+on:
+  push:
+    branches: [main]
+    paths: ['incoming/*.ipa']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: pulseplay-release-feed
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read IPA and publish newest build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish_ipa_drop.py --repo "$GITHUB_REPOSITORY"
